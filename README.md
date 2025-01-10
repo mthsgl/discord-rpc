@@ -46,7 +46,7 @@ Changez les fonctions __init__ et _handle_authentication de discord_model.py par
         return self.client.authenticate(token['access_token'])
 ```
 
-A noter que sans redis, a chaque lancement de l'application, il faudra accepter les autorisations sur Discord
+A noter que sans redis, il faudra accepter les autorisations sur Discord a chaque lancement de l'application.
 
 Sinon : 
 Créer un compte redis, créer une base de données, en cliquant sur connecter, récupérez les informations necessaires et collez les dans config.py
@@ -58,4 +58,8 @@ Créer un compte redis, créer une base de données, en cliquant sur connecter, 
 - Ouvrir un terminal à la racine du projet et taper :
 ```cmd
 pip install -r requirements.txt
+```
+- Pour lancer l'application :
+```cmd
+python main.py
 ```
