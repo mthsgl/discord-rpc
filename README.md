@@ -12,9 +12,9 @@ https://discord.com/developers/applications
 Dans le portail OAuth2 de votre application, copiez votre Client ID, Client Secret (reset si vous l'avez perdu) et renseignez une callback, par exemple : http://localhost:5000/callback 
 
 Dans config.py :
-CLIENT_ID = 'Votre client ID'
-CLIENT_SECRET = 'Votre client secret'
-REDIRECT_URI = 'Votre callback URL'
+- CLIENT_ID = 'Votre client ID'
+- CLIENT_SECRET = 'Votre client secret'
+- REDIRECT_URI = 'Votre callback URL'
 
 ### 3. Renseigner ses informations redis 
 Si vous ne souhaitez pas utiliser redis pour stocker votre token de connexion :
