@@ -1,8 +1,10 @@
 from models.discord_model import DiscordModel
+from utils import client_to_ui_vol
 from views.discord_view import DiscordView
 import threading
 import nest_asyncio
 import json
+import asyncio
 
 class DiscordController:
     def __init__(self, model: DiscordModel, view: DiscordView):
@@ -19,9 +21,16 @@ class DiscordController:
     def _bind_events(self):
         self.view.protocol("WM_DELETE_WINDOW", self._on_closing)
         
+        # Contrôles audio
         self.view.mute_button["command"] = self.toggle_mute
         self.view.deaf_button["command"] = self.toggle_deaf
+        self.view.audio_mode_button["command"] = self.toggle_audio_mode
         
+        # Binding des sliders
+        self.view.discord_mic_vol.config(command=lambda _: self.update_mic_volume())
+        self.view.volume_slider.config(command=lambda _: self.update_output_volume())
+        
+        # Menus de sélection
         self.view.selected_guild.trace_add('write', self._on_guild_selected)
         self.view.selected_channel.trace_add('write', self._on_channel_selected)
         self.view.selected_member.trace_add('write', self._on_member_selected)
@@ -35,18 +44,84 @@ class DiscordController:
             auth = self.model.start_client()
             self.current_user_id = auth['data']['user']['id']
             voice_settings = self.model.get_voice_settings()
-            self._update_button_states(voice_settings)
+            # print(json.dumps(voice_settings, indent=4))
+            self._update_audio_states(voice_settings)
             self._populate_guilds()
             
         except Exception as e:
             self.view.show_error(str(e))
 
-    def _update_button_states(self, voice_settings):
-        is_muted = voice_settings.get('mute', True) or voice_settings.get('deaf', True)
-        is_deaf = voice_settings.get('deaf', True)
+    def _update_audio_states(self, voice_settings):
+        is_deaf = voice_settings['data']["deaf"] is True
+        is_muted = (voice_settings['data']["mute"] is True) or is_deaf
         
         self.view.update_mute_button(is_muted)
         self.view.update_deaf_button(is_deaf)
+        
+        # Mise à jour des volumes sans appliquer les changements
+        input_volume = voice_settings['data']['input']['volume']
+        output_volume = voice_settings['data']['output']['volume']
+        
+        self.view.mic_volume.set(client_to_ui_vol(input_volume))
+        self.view.volume_slider_value.set(client_to_ui_vol(output_volume))
+        
+        # Mise à jour du mode audio
+        is_ptt = voice_settings['data']['mode']['type'] == 'PUSH_TO_TALK'
+        self.view.update_audio_mode(is_ptt)
+
+    def toggle_mute(self):
+        try:
+            current_state = "Muted" in self.view.mute_button["text"]
+            self.model.set_voice_settings(mute=not current_state)
+            self.view.update_mute_button(not current_state)
+            
+            # Si on démute et qu'on était en sourdine, on désactive aussi la sourdine
+            if not current_state and "Deafened" in self.view.deaf_button["text"]:
+                self.model.set_voice_settings(deaf=False)
+                self.view.update_deaf_button(False)
+                
+        except Exception as e:
+            self.view.show_error(str(e))
+
+    def toggle_deaf(self):
+        try:
+            current_state = "Deafened" in self.view.deaf_button["text"]
+            self.model.set_voice_settings(deaf=not current_state)
+            self.view.update_deaf_button(not current_state)
+            
+            # La sourdine active aussi le mute
+            self.view.update_mute_button(not current_state)
+                
+        except Exception as e:
+            self.view.show_error(str(e))
+
+    def toggle_audio_mode(self):
+        try:
+            current_text = self.view.audio_mode_button["text"]
+            
+            if "Push to Talk" in current_text:
+                self.model.set_voice_activity()
+                self.view.update_audio_mode(False)
+            else:
+                self.model.set_push_to_talk()
+                self.view.update_audio_mode(True)
+                
+        except Exception as e:
+            self.view.show_error(str(e))
+
+    def update_mic_volume(self):
+        try:
+            volume = self.view.mic_volume.get()
+            self.model.set_mic_volume(volume)
+        except Exception as e:
+            self.view.show_error(str(e))
+
+    def update_output_volume(self):
+        try:
+            volume = self.view.volume_slider_value.get()
+            self.model.set_headphone_volume(volume)
+        except Exception as e:
+            self.view.show_error(str(e))
 
     def _populate_guilds(self):
         try:
@@ -97,28 +172,7 @@ class DiscordController:
     def _apply_volume(self):
         try:
             volume = self.view.volume_slider.get()
-            print(volume)
             self.model.set_member_volume(self.model.current_member['user']['id'], volume)
-        except Exception as e:
-            self.view.show_error(str(e))
-
-    def toggle_mute(self):
-        try:
-            current_state = self.view.mute_button["text"] == "Unmute"
-            self.model.set_voice_settings(mute=not current_state)
-            self.view.update_mute_button(not current_state)
-            if not current_state and self.view.deaf_button["text"] == "Undeaf":
-                self.view.update_deaf_button(False)
-        except Exception as e:
-            self.view.show_error(str(e))
-
-    def toggle_deaf(self):
-        try:
-            current_state = self.view.deaf_button["text"] == "Undeaf"
-            self.model.set_voice_settings(deaf=not current_state)
-            self.view.update_deaf_button(not current_state)
-            if not current_state and self.view.mute_button["text"] == "Unmute":
-                self.view.update_mute_button(False)
         except Exception as e:
             self.view.show_error(str(e))
 

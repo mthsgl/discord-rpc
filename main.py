@@ -4,8 +4,9 @@ from controllers.extended_discord_controller import ExtendedDiscordController
 
 def main():
     model = DiscordModel()
-    view = ExtendedDiscordView()
+    view = ExtendedDiscordView(None)
     controller = ExtendedDiscordController(model, view)
+    view.controller = controller
     view.mainloop()
 
 if __name__ == "__main__":

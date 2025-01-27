@@ -5,6 +5,7 @@ import redis
 import json
 from controllers.discord_bridge import exchange_code, exchange_refresh_token
 from config import CLIENT_ID, SCOPES, REDIS_PORT, REDIS_HOST, REDIS_USERNAME, REDIS_PASSWORD
+from utils import ui_to_client_vol
 
 class DiscordModel:
     def __init__(self):
@@ -40,7 +41,9 @@ class DiscordModel:
         refresh_token = self.redis_client.get('refresh_token')
     
         if access_token:
-            return self.client.authenticate(access_token)
+            thh = self.client.authenticate(access_token)
+            print("acces_token : ", json.dumps(thh,indent=4))
+            return thh
         else:
             auth = self.client.authorize(str(CLIENT_ID), SCOPES)
             code_grant = auth['data']['code']
@@ -65,6 +68,12 @@ class DiscordModel:
     def set_voice_settings(self, mute=None, deaf=None):
         return self.client.set_voice_settings(mute=mute, deaf=deaf)
 
+    def set_mic_volume(self, volume):
+        return self.client.set_voice_settings(_input={'volume': ui_to_client_vol(volume)})
+
+    def set_headphone_volume(self, volume):
+        return self.client.set_voice_settings(output={'volume': ui_to_client_vol(volume)})
+
     def get_guilds(self):
         response = self.client.get_guilds()
         self.guilds_dict = {guild['name']: guild for guild in response['data']['guilds']}
@@ -86,7 +95,6 @@ class DiscordModel:
         return self.client.set_user_voice_settings(member_id, volume=volume)
     
     def set_member_mute(self, member_id, mute: bool):
-        print("mute :", mute, "member :", member_id)
         return self.client.set_user_voice_settings(member_id, mute=mute)
     
     def get_selected_voice_channel(self):
@@ -94,3 +102,9 @@ class DiscordModel:
     
     def subscribe_channel(self, channel_id):
         return self.client.subscribe("VOICE_STATE_CREATE", {"channel_id": channel_id})
+    
+    def set_push_to_talk(self):
+        return self.client.set_voice_settings(mode={"type": "PUSH_TO_TALK"})
+
+    def set_voice_activity(self):
+        return self.client.set_voice_settings(mode={"type": "VOICE_ACTIVITY"})
