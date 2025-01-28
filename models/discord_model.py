@@ -1,5 +1,5 @@
 import asyncio
-import pypresence
+import deps.pypresence.pypresence as pypresence
 from pypresence import DiscordNotFound
 import redis
 import json
@@ -38,11 +38,10 @@ class DiscordModel:
 
     def _handle_authentication(self):
         access_token = self.redis_client.get('access_token')
-        refresh_token = self.redis_client.get('refresh_token')
-    
+        # refresh_token = self.redis_client.get('refresh_token')
+        
         if access_token:
             thh = self.client.authenticate(access_token)
-            print("acces_token : ", json.dumps(thh,indent=4))
             return thh
         else:
             auth = self.client.authorize(str(CLIENT_ID), SCOPES)
@@ -108,3 +107,12 @@ class DiscordModel:
 
     def set_voice_activity(self):
         return self.client.set_voice_settings(mode={"type": "VOICE_ACTIVITY"})
+
+    def select_voice_channel(self, channel_id):
+        return self.client.select_voice_channel(channel_id)
+    
+    def leave_voice_channel(self):
+        return self.client.select_voice_channel(None)
+
+    def get_soundboard_sounds(self):
+        return self.client.get_soundboard_sounds()

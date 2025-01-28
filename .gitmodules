@@ -1,0 +1,3 @@
+[submodule "deps/pypresence"]
+	path = deps/pypresence
+	url = https://github.com/mthsgl/pypresence

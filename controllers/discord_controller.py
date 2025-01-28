@@ -4,7 +4,6 @@ from views.discord_view import DiscordView
 import threading
 import nest_asyncio
 import json
-import asyncio
 
 class DiscordController:
     def __init__(self, model: DiscordModel, view: DiscordView):
@@ -47,6 +46,8 @@ class DiscordController:
             # print(json.dumps(voice_settings, indent=4))
             self._update_audio_states(voice_settings)
             self._populate_guilds()
+            sb = self.model.get_soundboard_sounds()
+            print(json.dumps(sb, indent=4))
             
         except Exception as e:
             self.view.show_error(str(e))
@@ -140,6 +141,7 @@ class DiscordController:
     def _populate_channels(self, guild_id):
         try:
             channels = self.model.get_channels(guild_id)
+            print(json.dumps(channels, indent=4))
             self.view.create_channels_menu(channels.keys())
         except Exception as e:
             self.view.show_error(str(e))
@@ -154,7 +156,28 @@ class DiscordController:
     def _populate_members(self, channel_id):
         try:
             members = self.model.get_channel_members(channel_id)
-            self.view.create_members_menu(members.keys())
+            my_channel = self.model.get_selected_voice_channel()
+            if ((my_channel['data'] is None) or (my_channel['data']['id'] != channel_id)):
+                self.view.create_btn_join()
+                self.view.join_btn.config(command=lambda: self._join_channel(channel_id))
+            elif (my_channel['data']['id'] == channel_id):
+                #self.view.create_members_menu(members.keys())
+                self.view.create_btn_leave()
+                self.view.leave_btn.config(command=lambda: self._leave_channel())
+        except Exception as e:
+            self.view.show_error(str(e))
+    
+    def _join_channel(self, channel_id):
+        try:
+            self.model.select_voice_channel(channel_id)
+            self.view.create_btn_leave()
+        except Exception as e:
+            self.view.show_error(str(e))
+    
+    def _leave_channel(self):
+        try:
+            self.model.leave_voice_channel()
+            self.view.create_btn_join()
         except Exception as e:
             self.view.show_error(str(e))
 

@@ -81,7 +81,23 @@ class DiscordView(tk.Tk):
         self.members_menu = OptionMenu(self.selection_frame, self.selected_member, *member_names)
         self.members_menu.config(width=20)
         self.members_menu.grid(column=0, row=2, pady=2)
-
+    
+    def create_btn_join(self):
+        if hasattr(self, 'leave_btn'):
+            self.leave_btn.destroy()
+        if hasattr(self, 'join_btn'):
+            self.join_btn.destroy()
+        self.join_btn = Button(text='Join Channel')
+        self.join_btn.grid(column=0, row=2, pady=2)
+    
+    def create_btn_leave(self):
+        if hasattr(self, 'join_btn'):
+            self.join_btn.destroy()
+        if hasattr(self, 'leave_btn'):
+            self.leave_btn.destroy()
+        self.leave_btn = Button(text='Leave Channel')
+        self.leave_btn.grid(column=0, row=2, pady=2)
+ 
     def update_mute_button(self, is_muted):
         self.mute_button["text"] = "🔇 Muted" if is_muted else "🔊 Unmuted"
 
